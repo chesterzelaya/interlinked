@@ -151,7 +151,7 @@
     </div>
 
     <div id="recording-interface" class="recording-interface">
-        <div class="timer" id="timer">5</div>
+        <div class="timer" id="timer">90</div>
         <div class="wave-container">
             <div class="wave-bar"></div>
             <div class="wave-bar"></div>
@@ -186,7 +186,7 @@
         let mediaRecorder;
         let audioChunks = [];
         let timerInterval;
-        let timeLeft = 5;
+                        let timeLeft = 90;
         let audioContext;
         let analyser;
         let microphone;
@@ -404,8 +404,8 @@
             setTimeout(() => {
                 document.getElementById('recording-interface').style.display = 'none';
                 document.getElementById('initial-interface').style.display = 'flex';
-                timeLeft = 5;
-                document.getElementById('timer').innerText = '5';
+                timeLeft = 90;
+                document.getElementById('timer').innerText = '90';
                 document.getElementById('status').innerText = 'Recording in progress...';
                 
                 // Reset wave bars to minimum height
