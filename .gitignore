@@ -1,2 +1,14 @@
 /venv
 /backend/datastorage/*
+/analysisdata/*
+/NLP/analysis_data/*
+/NLP/*baseline_profile.json
+/NLP/*analysis_history.json
+/NLP/*anomaly_reports.json
+/NLP/analysis_*.json
+*.pkl
+*.pickle
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
