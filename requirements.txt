@@ -1,2 +1,19 @@
 Flask==2.3.3
 Flask-CORS==4.0.0
+
+# Core NLP and Audio Processing
+openai-whisper>=20231117
+librosa>=0.10.1
+soundfile>=0.12.1
+
+# Text Processing and Sentiment Analysis
+nltk>=3.8.1
+textblob>=0.17.1
+
+# Machine Learning and Scientific Computing (Python 3.13 compatible)
+scikit-learn>=1.4.0
+scipy>=1.11.2
+numpy>=1.26.0
+
+# Utilities
+python-dateutil>=2.8.2
