@@ -20,11 +20,30 @@ from anomaly_detection import AnomalyDetector
 
 
 class InterlinkedAnalyzer:
-    def __init__(self, data_storage_path="../backend/datastorage", analysis_storage_path="analysis_data"):
+    def __init__(self, data_storage_path=None, analysis_storage_path="analysis_data"):
         """
         Initialize the complete NLP analysis pipeline.
         """
-        self.data_storage_path = data_storage_path
+        # Auto-detect the correct data storage path
+        if data_storage_path is None:
+            # Try different possible paths based on current working directory
+            possible_paths = [
+                "../backend/datastorage",  # When run from NLP directory
+                "backend/datastorage",     # When run from project root
+                "./backend/datastorage"    # Alternative project root syntax
+            ]
+            
+            self.data_storage_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    self.data_storage_path = path
+                    break
+            
+            if self.data_storage_path is None:
+                self.data_storage_path = "../backend/datastorage"  # Default fallback
+        else:
+            self.data_storage_path = data_storage_path
+            
         self.analysis_storage_path = analysis_storage_path
         
         # Create analysis storage directory
@@ -245,27 +264,17 @@ class InterlinkedAnalyzer:
         """
         Find the most recent audio file in the data storage directory.
         """
-        print(f"Checking data storage path: {self.data_storage_path}")
-        print(f"Path exists: {os.path.exists(self.data_storage_path)}")
-        
         if not os.path.exists(self.data_storage_path):
             return None
         
-        all_files = os.listdir(self.data_storage_path)
-        print(f"All files in directory: {all_files}")
-        
-        audio_files = [f for f in all_files if f.endswith('.wav')]
-        print(f"Audio files found: {audio_files}")
-        
+        audio_files = [f for f in os.listdir(self.data_storage_path) if f.endswith('.wav')]
         if not audio_files:
             return None
         
         # Sort by modification time
         audio_files.sort(key=lambda f: os.path.getmtime(os.path.join(self.data_storage_path, f)), reverse=True)
         
-        latest_file = os.path.join(self.data_storage_path, audio_files[0])
-        print(f"Latest audio file: {latest_file}")
-        return latest_file
+        return os.path.join(self.data_storage_path, audio_files[0])
     
     def _load_baseline_profile(self) -> Optional[Dict]:
         """
@@ -478,11 +487,29 @@ class InterlinkedAnalyzer:
         voice_analysis = analysis.get('voice_analysis', {})
         sentiment_analysis = analysis.get('sentiment_analysis', {})
         
+        # Safely extract nested values
+        def safe_get_nested(data, *keys, default=0):
+            """Safely get nested dictionary values"""
+            result = data
+            for key in keys:
+                if isinstance(result, dict):
+                    result = result.get(key, {})
+                else:
+                    return default
+            return result if not isinstance(result, dict) else default
+        
+        # Handle emotional volatility which might be a plain number or dict
+        emotional_volatility_data = sentiment_analysis.get('emotional_volatility', 0)
+        if isinstance(emotional_volatility_data, dict):
+            emotional_volatility_value = emotional_volatility_data.get('compound_volatility', 0)
+        else:
+            emotional_volatility_value = emotional_volatility_data  # Use the plain number
+        
         summary['key_metrics'] = {
             'speaking_rate': voice_analysis.get('speaking_rate', 0),
-            'sentiment_score': sentiment_analysis.get('overall_sentiment', {}).get('vader_compound', 0),
-            'manipulation_ratio': sentiment_analysis.get('manipulation_markers', {}).get('overall_manipulation_ratio', 0),
-            'emotional_volatility': sentiment_analysis.get('emotional_volatility', {}).get('compound_volatility', 0)
+            'sentiment_score': safe_get_nested(sentiment_analysis, 'overall_sentiment', 'vader_compound'),
+            'manipulation_ratio': safe_get_nested(sentiment_analysis, 'manipulation_markers', 'overall_manipulation_ratio'),
+            'emotional_volatility': emotional_volatility_value
         }
         
         return summary

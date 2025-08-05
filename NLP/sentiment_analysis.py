@@ -22,6 +22,12 @@ class SentimentAnalyzer:
             nltk.download('vader_lexicon')
         
         try:
+            nltk.data.find('punkt_tab')
+        except LookupError:
+            nltk.download('punkt_tab')
+            
+        # Fallback to older punkt if punkt_tab fails
+        try:
             nltk.data.find('punkt')
         except LookupError:
             nltk.download('punkt')
@@ -42,23 +48,15 @@ class SentimentAnalyzer:
         Comprehensive sentiment analysis of transcribed text.
         """
         try:
-            print(f"Starting sentiment analysis...")
             text = transcription_data.get('text', '')
             segments = transcription_data.get('segments', [])
             
-            print(f"Text length: {len(text)}")
-            print(f"Number of segments: {len(segments)}")
-            
             if not text.strip():
-                print("No text to analyze")
                 return None
             
             # Overall sentiment analysis
-            print("Calculating VADER scores...")
             vader_scores = self.sia.polarity_scores(text)
-            print("Calculating TextBlob sentiment...")
             textblob_sentiment = TextBlob(text).sentiment
-            print("Basic sentiment analysis complete.")
             
             # Segment-level sentiment analysis
             segment_sentiments = []

@@ -111,6 +111,16 @@ class AnomalyDetector:
             current_val = voice_data.get(feature, 0)
             baseline_val = voice_baseline.get(feature, 0)
             
+            # Handle case where baseline_val might be a dict with 'mean' key
+            if isinstance(baseline_val, dict):
+                baseline_val = baseline_val.get('mean', 0)
+            
+            # Ensure both values are numbers
+            if not isinstance(current_val, (int, float)):
+                current_val = 0
+            if not isinstance(baseline_val, (int, float)):
+                baseline_val = 0
+            
             if baseline_val != 0:
                 features[f'voice_{feature}_change'] = abs(current_val - baseline_val) / abs(baseline_val)
             else:
@@ -127,6 +137,13 @@ class AnomalyDetector:
         for metric in ['vader_compound', 'textblob_polarity', 'textblob_subjectivity']:
             current_val = current_sentiment.get(metric, 0)
             baseline_val = baseline_sentiment.get(metric, 0)
+            
+            # Ensure both values are numbers
+            if not isinstance(current_val, (int, float)):
+                current_val = 0
+            if not isinstance(baseline_val, (int, float)):
+                baseline_val = 0
+                
             features[f'sentiment_{metric}_change'] = abs(current_val - baseline_val)
         
         # Manipulation markers

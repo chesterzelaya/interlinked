@@ -51,4 +51,8 @@ go to http://127.0.0.1:8000 and take your daily test.
 
 view analysis results:
 
+    on the UI with "Analyze Latest Recording" button
+
+    or
+
     cd NLP && python main.py

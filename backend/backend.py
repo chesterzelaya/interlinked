@@ -1,11 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import sys
 from datetime import datetime
 import uuid
 
 app = Flask(__name__)
 CORS(app, origins=['http://127.0.0.1:8000', 'http://localhost:8000'])
+
+# Add NLP directory to path for importing
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'NLP'))
 
 # Define the data storage path
 DATA_STORAGE_PATH = os.path.join(os.path.dirname(__file__), 'datastorage')
@@ -75,6 +79,38 @@ def get_recording_stats():
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy'}), 200
+
+@app.route('/analyze', methods=['POST'])
+def analyze_latest_recording():
+    """
+    Trigger NLP analysis of the latest audio recording.
+    """
+    try:
+        # Import the analyzer (done here to avoid import issues if NLP deps aren't available)
+        from main import InterlinkedAnalyzer
+        
+        # Initialize analyzer
+        analyzer = InterlinkedAnalyzer(data_storage_path=DATA_STORAGE_PATH)
+        
+        # Run analysis on latest recording
+        result = analyzer.analyze_latest_recording()
+        
+        if 'error' in result:
+            return jsonify({'error': result['error']}), 400
+        
+        return jsonify(result), 200
+        
+    except ImportError as e:
+        return jsonify({
+            'error': 'NLP analysis unavailable',
+            'details': 'NLP dependencies not installed or configured properly',
+            'import_error': str(e)
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'error': 'Analysis failed',
+            'details': str(e)
+        }), 500
 
 if __name__ == '__main__':
     print(f"Data storage path: {DATA_STORAGE_PATH}")
