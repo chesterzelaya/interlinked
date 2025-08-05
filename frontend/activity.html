@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interlinked - Activity</title>
+    <style>
+        body {
+            background-color: white;
+            font-family: monospace;
+            margin: 20px;
+            color: black;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .activity-grid {
+            display: grid;
+            grid-template-columns: repeat(53, 12px);
+            grid-gap: 2px;
+            margin: 20px 0;
+        }
+
+        .day-cell {
+            width: 10px;
+            height: 10px;
+            background-color: #eee;
+            border: 1px solid #ddd;
+        }
+
+        .day-cell.level-0 { background-color: #eee; }
+        .day-cell.level-1 { background-color: #c0c0c0; }
+        .day-cell.level-2 { background-color: #808080; }
+        .day-cell.level-3 { background-color: #404040; }
+        .day-cell.level-4 { background-color: #000; }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+
+        .legend-cell {
+            width: 10px;
+            height: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .back-link {
+            color: black;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .month-labels {
+            display: grid;
+            grid-template-columns: repeat(53, 12px);
+            grid-gap: 2px;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .month-label {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html" class="back-link">← Back to Test</a>
+        <h1>Daily Test Activity</h1>
+    </div>
+
+    <div class="month-labels" id="monthLabels"></div>
+    <div class="activity-grid" id="activityGrid"></div>
+
+    <div class="legend">
+        <span>Less</span>
+        <div class="legend-cell level-0"></div>
+        <div class="legend-cell level-1"></div>
+        <div class="legend-cell level-2"></div>
+        <div class="legend-cell level-3"></div>
+        <div class="legend-cell level-4"></div>
+        <span>More</span>
+    </div>
+
+    <div id="stats"></div>
+
+    <script>
+        async function loadActivity() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/stats');
+                const data = await response.json();
+                
+                // Generate grid for past year
+                const today = new Date();
+                const startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 1);
+                
+                // Round to start of week (Sunday)
+                const dayOfWeek = startDate.getDay();
+                startDate.setDate(startDate.getDate() - dayOfWeek);
+                
+                const grid = document.getElementById('activityGrid');
+                const monthLabels = document.getElementById('monthLabels');
+                
+                // Create month labels
+                let currentMonth = '';
+                for (let week = 0; week < 53; week++) {
+                    const weekDate = new Date(startDate);
+                    weekDate.setDate(startDate.getDate() + (week * 7));
+                    const monthName = weekDate.toLocaleDateString('en', { month: 'short' });
+                    
+                    if (monthName !== currentMonth && week % 4 === 0) {
+                        const monthLabel = document.createElement('div');
+                        monthLabel.className = 'month-label';
+                        monthLabel.textContent = monthName;
+                        monthLabel.style.gridColumn = `${week + 1} / span 4`;
+                        monthLabels.appendChild(monthLabel);
+                        currentMonth = monthName;
+                    }
+                }
+                
+                // Create grid cells
+                for (let week = 0; week < 53; week++) {
+                    for (let day = 0; day < 7; day++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(startDate.getDate() + (week * 7) + day);
+                        
+                        if (currentDate > today) break;
+                        
+                        const dateStr = currentDate.toISOString().split('T')[0];
+                        const count = data[dateStr] || 0;
+                        
+                        const cell = document.createElement('div');
+                        cell.className = 'day-cell';
+                        
+                        // Set intensity based on count
+                        if (count === 0) cell.classList.add('level-0');
+                        else if (count === 1) cell.classList.add('level-1');
+                        else if (count === 2) cell.classList.add('level-2');
+                        else if (count === 3) cell.classList.add('level-3');
+                        else cell.classList.add('level-4');
+                        
+                        // Add tooltip
+                        cell.title = `${dateStr}: ${count} recording${count !== 1 ? 's' : ''}`;
+                        
+                        grid.appendChild(cell);
+                    }
+                }
+                
+                // Show stats
+                const totalRecordings = Object.values(data).reduce((sum, count) => sum + count, 0);
+                const activeDays = Object.keys(data).length;
+                document.getElementById('stats').innerHTML = `
+                    <p>Total recordings: ${totalRecordings}</p>
+                    <p>Active days: ${activeDays}</p>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                document.getElementById('stats').innerHTML = '<p>Error loading activity data</p>';
+            }
+        }
+
+        loadActivity();
+    </script>
+</body>
+</html>
